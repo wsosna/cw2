@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebApp.Models;
 
 namespace WebApp.DAL
 {
-    public interface IDbService
+    public interface IStudentsDal
     {
-        public IEnumerable<Models.Student> GetStudents();
+        public IEnumerable<Student> GetStudents();
     }
 }

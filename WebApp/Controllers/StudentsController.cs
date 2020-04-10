@@ -3,57 +3,79 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using System.Data.SqlClient;
 using WebApp.DAL;
-
+using WebApp.Models;
 namespace WebApp.Controllers
 {
     [ApiController]
     [Route("api/students")]
     public class StudentsController : ControllerBase
     {
-        private readonly IDbService _dbService;
+        private const string ConString = "Data Source=db-mssql;Initial Catalog=s16520;Integrated Security=True";
 
-        public StudentsController(IDbService dbService)
+        private IStudentsDal _dbService;
+
+        public StudentsController(IStudentsDal dbService)
         {
             _dbService = dbService;
         }
 
         [HttpGet]
-        public IActionResult GetStudent(string orderBy)
+        public IActionResult GetStudents([FromServices] IStudentsDal dbService)
         {
-            return Ok(_dbService.GetStudents());
-        }
+            var list = new List<Student>();
 
-        [HttpGet("{id}")]
-        public IActionResult GetStudent(int id)
-        {
-            if(id == 1)
+            using (SqlConnection con = new SqlConnection(ConString))
+            using (SqlCommand com = new SqlCommand())
             {
-                return Ok("Kowalski");
-            }else if (id ==2)
-            {
-                return Ok("Malewski");
+                com.Connection = con;
+                com.CommandText = "select * from student ";
+
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var st = new Student();
+                    st.IndexNumber = dr["IndexNumber"].ToString();
+                    st.FirstName = dr["FirstName"].ToString();
+                    st.LastName = dr["LastName"].ToString();
+                    list.Add(st);
+                }
             }
-            return NotFound("Nie znaleziono zasobu");
+
+            return Ok(list);
         }
 
-        [HttpPost]
-        public IActionResult CreateStudent(Models.Student student)
+        [HttpGet("{indexNumber}")]
+        public IActionResult GetStudent(string indexNumber)
         {
-            student.IndexNumber = $"s{new Random().Next(1, 20000)}";
-            return Ok(student);
+            using (SqlConnection con = new SqlConnection(ConString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select StartDate, Semester " +
+                                    "from Enrollment " +
+                                    "inner join Student on Student.IdEnrollment = Enrollment.IdEnrollment " +
+                                    "where Student.IndexNumber = @index";
+
+                com.Parameters.AddWithValue("index", indexNumber);
+
+                con.Open();
+                var dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    var st = new Enrollment();
+
+                    st.StartDate = dr["StartDate"].ToString();
+                    st.Semester = dr["Semester"].ToString();
+                    return Ok(st);
+                }
+
+            }
+
+            return NotFound();
         }
 
-        [HttpPut("{id}")]
-        public IActionResult PutStudent(int id)
-        {
-            return Ok("Aktualizacja zakończona");
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult DeleteStudent(int id)
-        {
-            return Ok("Usuwanie zakończone");
-        }
     }
 }

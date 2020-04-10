@@ -26,7 +26,8 @@ namespace WebApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IDbService, MockDbService>();
+            //AddSingleton, AddTransient, AddScoped
+            services.AddScoped<IStudentsDal, SqlServerDbDal>();
             services.AddControllers();
         }
 
@@ -37,8 +38,6 @@ namespace WebApp
             {
                 app.UseDeveloperExceptionPage();
             }
-
-            app.UseHttpsRedirection();
 
             app.UseRouting();
 
